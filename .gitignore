@@ -1,0 +1,4 @@
+.vagrant
+.docker
+.cache
+.bash-history

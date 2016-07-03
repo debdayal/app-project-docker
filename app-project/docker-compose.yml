@@ -1,0 +1,95 @@
+version: "2"
+services:
+  mongodb:
+    image: debdayal/mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb-data:/data/db
+    networks:
+      - app-network
+    environment:
+      - "constraint:node==mars"
+  config-server:
+    image: debdayal/config-server
+    networks:
+      - app-network
+  eureka-server:
+    image: debdayal/eureka-server
+    ports:
+      - "8761:8761"
+    networks:
+      - app-network
+    depends_on:
+      - config-server
+    entrypoint: ./wait-for-it.sh config-server:8888 -- ./run.sh --spring.profiles.active=docker --spring.cloud.config.uri=http://config-server:8888 --debug
+  user-service:
+    image: debdayal/user-service
+    networks:
+      - app-network
+    depends_on:
+      - eureka-server
+      - config-server
+      - mongodb
+    entrypoint: ./wait-for-it.sh eureka-server:8761 -- ./run.sh --spring.profiles.active=docker --spring.cloud.config.uri=http://config-server:8888 --debug
+  gateway-1:
+    image: debdayal/gateway
+    networks:
+      - app-network
+    depends_on:
+      - eureka-server
+      - config-server
+    entrypoint: ./wait-for-it.sh eureka-server:8761 -- ./run.sh --spring.profiles.active=docker --spring.cloud.config.uri=http://config-server:8888 --debug
+  gateway-2:
+    image: debdayal/gateway
+    networks:
+      - app-network
+    depends_on:
+      - eureka-server
+      - config-server
+    entrypoint: ./wait-for-it.sh eureka-server:8761 -- ./run.sh --spring.profiles.active=docker --spring.cloud.config.uri=http://config-server:8888 --debug
+  user-ui-1:
+    image: debdayal/user-ui
+    depends_on:
+      - api-load-balancer
+    networks:
+      - app-network
+  user-ui-2:
+    image: debdayal/user-ui
+    depends_on:
+      - api-load-balancer
+    networks:
+      - app-network
+  api-load-balancer:
+    image: debdayal/haproxy-api
+    ports:
+      - "8001:1936"
+    networks:
+      - app-network
+    depends_on:
+      - gateway-1
+      - gateway-2
+  ui-load-balancer:
+    image: debdayal/haproxy-ui
+    ports:
+      - "80:80"
+      - "8002:1936"
+    networks:
+      - app-network
+    depends_on:
+      - user-ui-1
+      - user-ui-2
+    environment:
+      - "constraint:node==sun"
+
+volumes:
+  mongodb-data:
+    driver: local
+
+networks:
+  app-network:
+    driver: overlay
+    ipam:
+      driver: default
+      config:
+        - subnet: 192.178.0.0/16
