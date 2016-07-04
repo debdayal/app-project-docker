@@ -16,38 +16,50 @@ services:
       - app-network
   eureka-server:
     image: debdayal/eureka-server
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_CLOUD_CONFIG_URI: http://config-server:8888
     ports:
       - "8761:8761"
     networks:
       - app-network
     depends_on:
       - config-server
-    entrypoint: ./wait-for-it.sh config-server:8888 -- ./run.sh --spring.profiles.active=docker --spring.cloud.config.uri=http://config-server:8888 --debug
+    entrypoint: ./wait-for-it.sh config-server:8888 -- ./run.sh --debug
   user-service:
     image: debdayal/user-service
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_CLOUD_CONFIG_URI: http://config-server:8888
     networks:
       - app-network
     depends_on:
       - eureka-server
       - config-server
       - mongodb
-    entrypoint: ./wait-for-it.sh eureka-server:8761 -- ./run.sh --spring.profiles.active=docker --spring.cloud.config.uri=http://config-server:8888 --debug
+    entrypoint: ./wait-for-it.sh eureka-server:8761 -- ./run.sh --debug
   gateway-1:
     image: debdayal/gateway
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_CLOUD_CONFIG_URI: http://config-server:8888
     networks:
       - app-network
     depends_on:
       - eureka-server
       - config-server
-    entrypoint: ./wait-for-it.sh eureka-server:8761 -- ./run.sh --spring.profiles.active=docker --spring.cloud.config.uri=http://config-server:8888 --debug
+    entrypoint: ./wait-for-it.sh eureka-server:8761 -- ./run.sh --debug
   gateway-2:
     image: debdayal/gateway
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_CLOUD_CONFIG_URI: http://config-server:8888
     networks:
       - app-network
     depends_on:
       - eureka-server
       - config-server
-    entrypoint: ./wait-for-it.sh eureka-server:8761 -- ./run.sh --spring.profiles.active=docker --spring.cloud.config.uri=http://config-server:8888 --debug
+    entrypoint: ./wait-for-it.sh eureka-server:8761 -- ./run.sh --debug
   user-ui-1:
     image: debdayal/user-ui
     depends_on:
@@ -81,7 +93,7 @@ services:
       - user-ui-2
     environment:
       - "constraint:node==sun"
-
+      
 volumes:
   mongodb-data:
     driver: local
