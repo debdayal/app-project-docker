@@ -22,4 +22,4 @@ Application stack will get deployed to a four node Swarm cluster plus one additi
 
 Scaling up a service like:
 
-> docker-compose -p app user-service=2
+> docker-compose -p app scale user-service=2
