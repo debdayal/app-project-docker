@@ -28,7 +28,7 @@ Vagrant.configure(2) do |config|
  config.vm.synced_folder ".", "/vagrant"
  config.vm.synced_folder "/Users", "/Users"
  config.vm.provision :shell, path: "provision/bootstrap.sh"
- config.vm.provision :shell, inline: 'PYTHONUNBUFFERED=1 ansible-playbook -v -s /vagrant/provision/ansible/prov.yml -c local'
+ config.vm.provision :shell, inline: 'PYTHONUNBUFFERED=1 ansible-playbook -s /vagrant/provision/ansible/prov.yml -c local'
 
  if Vagrant.has_plugin?("vagrant-cachier")
    config.cache.scope = :box
