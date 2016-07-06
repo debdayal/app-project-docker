@@ -9,7 +9,7 @@ services:
     networks:
       - app-network
     environment:
-      - "constraint:node==mars"
+      - "constraint:node==earth"
   config-server:
     image: debdayal/config-server
     networks:
@@ -93,7 +93,17 @@ services:
       - user-ui-2
     environment:
       - "constraint:node==sun"
-      
+
+    docker-ui:
+      image: uifd/ui-for-docker
+      privileged: true
+      ports:
+        - "9000:9000"
+      volumes:
+        - /var/run/docker.sock:/var/run/docker.sock
+      environment:
+        - "constraint:node==sun"
+
 volumes:
   mongodb-data:
     driver: local
