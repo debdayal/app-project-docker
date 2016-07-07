@@ -15,7 +15,7 @@ echo "Changing context to mercury"
 eval $(docker-machine env mercury)
 docker-machine active
 echo "Running Consul image"
-docker run -d -p 8500:8500 -h consul --name consul-key-value-store progrium/consul -server -bootstrap
+docker run -d -p 8500:8500 -h consul --restart unless-stopped --name consul-key-value-store progrium/consul -server -bootstrap
 echo "Adding sun to docker-machine as Swarm master"
 docker-machine create -d generic \
 --generic-ssh-user $SSH_USER \

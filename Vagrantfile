@@ -20,7 +20,9 @@ Vagrant.configure(2) do |config|
       machine.vm.hostname = name
       machine.vm.network "private_network", ip: ip
       machine.vm.provider "virtualbox" do |vb|
-          vb.memory = "1024"
+        if name != "mercury"
+          vb.memory = "2048"
+        end
           vb.name = name
         end
       end

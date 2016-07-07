@@ -10,10 +10,12 @@ services:
       - app-network
     environment:
       - "constraint:node==earth"
+
   config-server:
     image: debdayal/config-server
     networks:
       - app-network
+
   eureka-server:
     image: debdayal/eureka-server
     environment:
@@ -25,7 +27,8 @@ services:
       - app-network
     depends_on:
       - config-server
-    entrypoint: ./wait-for-it.sh config-server:8888 -- ./run.sh --debug
+    entrypoint: ./wait-for-it.sh config-server:8888  -- ./run.sh
+
   user-service:
     image: debdayal/user-service
     environment:
@@ -34,65 +37,66 @@ services:
     networks:
       - app-network
     depends_on:
-      - eureka-server
-      - config-server
       - mongodb
-    entrypoint: ./wait-for-it.sh eureka-server:8761 -- ./run.sh --debug
-  gateway-1:
+      - eureka-server
+      - config-server
+    entrypoint: ./wait-for-it.sh eureka-server:8761  -- ./run.sh
+
+  gateway:
     image: debdayal/gateway
     environment:
-      SPRING_PROFILES_ACTIVE: docker
-      SPRING_CLOUD_CONFIG_URI: http://config-server:8888
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_CLOUD_CONFIG_URI=http://config-server:8888
+      - "constraint:node==venus"
     networks:
       - app-network
     depends_on:
       - eureka-server
       - config-server
-    entrypoint: ./wait-for-it.sh eureka-server:8761 -- ./run.sh --debug
-  gateway-2:
-    image: debdayal/gateway
-    environment:
-      SPRING_PROFILES_ACTIVE: docker
-      SPRING_CLOUD_CONFIG_URI: http://config-server:8888
-    networks:
-      - app-network
-    depends_on:
-      - eureka-server
-      - config-server
-    entrypoint: ./wait-for-it.sh eureka-server:8761 -- ./run.sh --debug
-  user-ui-1:
-    image: debdayal/user-ui
-    depends_on:
-      - api-load-balancer
-    networks:
-      - app-network
-  user-ui-2:
-    image: debdayal/user-ui
-    depends_on:
-      - api-load-balancer
-    networks:
-      - app-network
+    entrypoint: ./wait-for-it.sh eureka-server:8761  -- ./run.sh
+
   api-load-balancer:
-    image: debdayal/haproxy-api
+    image: dockercloud/haproxy
     ports:
       - "8001:1936"
+    depends_on:
+      - gateway
+    links:
+      - gateway
+    environment:
+      - ADDITIONAL_SERVICES=app:gateway
+      - "constraint:node==venus"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
     networks:
       - app-network
+
+  user-ui:
+    image: debdayal/user-ui
     depends_on:
-      - gateway-1
-      - gateway-2
+      - api-load-balancer
+    environment:
+      - "constraint:node==sun"
+    networks:
+      - app-network
+
   ui-load-balancer:
-    image: debdayal/haproxy-ui
+    image: dockercloud/haproxy
+    depends_on:
+      - user-ui
+    links:
+      - user-ui
+    environment:
+      - ADDITIONAL_SERVICES=app:user-ui
+      - "constraint:node==sun"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
     ports:
       - "80:80"
       - "8002:1936"
     networks:
       - app-network
-    depends_on:
-      - user-ui-1
-      - user-ui-2
-    environment:
-      - "constraint:node==sun"
+
   docker-ui:
     image: uifd/ui-for-docker
     privileged: true
@@ -101,7 +105,9 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
-      - "constraint:node==sun"
+      - "affinity:container!=*docker-ui*"
+    networks:
+      - app-network
 
 volumes:
   mongodb-data:
